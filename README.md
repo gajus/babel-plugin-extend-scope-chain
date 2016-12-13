@@ -56,6 +56,50 @@ Output:
 var foo = window.foo = "bar";
 ```
 
+## Motivation
+
+To bundle external scripts.
+
+A specific use case for which this was developed is to bundle external
+supply-side platform (SSP) scripts into the main script. This enables us
+to decrease the amount of HTTP requests that are required to start
+[header bidding](https://www.appnexus.com/en/publishers/header-bidding).
+
+The problem is that all vendor scripts assume that the script is loaded asynchronously, using script tags, e.g.
+
+```js
+const scriptElement = document.createElement('script');
+scriptElement.async = true;
+scriptElement.src = '//script.js';
+document.head.appendChild(scriptElement);
+```
+
+This assumption allows them to write code such as:
+
+```js
+var foo = foo || {};
+```
+
+In the above example, if `foo` is not set, `window.foo` becomes `{}`.
+
+We want to bundle and delay these script execution, i.e.
+
+```js
+function loadVendorFoo () {
+  var foo = foo || {};
+}
+```
+
+The above code breaks, because now `foo` is isolated to `loadVendorFoo` scope.
+
+Using this transpiler, we namespace all global variable declarations using `window` object, i.e. our script becomes:
+
+```js
+function loadVendorFoo () {
+  var foo = window.foo = foo || {};
+}
+```
+
 ## Configuration
 
 |Name|Type|Description|Default|
