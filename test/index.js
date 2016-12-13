@@ -49,6 +49,13 @@ test('assignment in file scope', (t) => {
   t.true(actual === expected);
 });
 
+test('assignment of global variable', (t) => {
+  const actual = transform('var foo = bar;');
+  const expected = 'var foo = window.foo = window.bar;';
+
+  t.true(actual === expected);
+});
+
 test('options.export', (t) => {
   const actual = transform('foo.bar = "baz";', {
     export: true,

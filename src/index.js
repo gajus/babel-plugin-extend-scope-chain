@@ -22,20 +22,25 @@ export default ({
 }: {
   types: Object
 }) => {
+  let realGlobals;
+
   return {
     visitor: {
-      AssignmentExpression (path: Object, state: Object) {
-        const realGlobals = state.opts.globals || [
-          'window'
-        ];
+      Identifier (path: Object) {
+        if (t.isAssignmentExpression(path.parent) && (path.parent.left === path.node || path.parent.right === path.node)) {
+          extendScopeChain(t, path, realGlobals);
+        }
 
-        if (t.isIdentifier(path.get('left'))) {
-          extendScopeChain(t, path.get('left'), realGlobals);
-        } else if (t.isMemberExpression(path.get('left'))) {
-          extendScopeChain(t, path.get('left').get('object'), realGlobals);
+        if (t.isMemberExpression(path.parent) && path.parent.object === path.node) {
+          extendScopeChain(t, path, realGlobals);
         }
       },
       Program: {
+        enter (path: Object, state: Object) {
+          realGlobals = state.opts.globals || [
+            'window'
+          ];
+        },
         exit (path: Object, state: Object) {
           if (!state.opts.export) {
             return;

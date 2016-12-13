@@ -77,7 +77,7 @@ document.head.appendChild(scriptElement);
 This assumption allows them to write code such as:
 
 ```js
-var foo = foo || {};
+var foo = foo || 'bar';
 ```
 
 In the above example, if `foo` is not set, `window.foo` becomes `{}`.
@@ -86,17 +86,17 @@ We want to bundle and delay these script execution, i.e.
 
 ```js
 function loadVendorFoo () {
-  var foo = foo || {};
+  var foo = foo || 'bar';
 }
 ```
 
-The above code breaks, because now `foo` is isolated to `loadVendorFoo` scope.
+The above code breaks, because now `foo` is isolated to `loadVendorFoo` scope, i.e. in the above code `foo` will always equal "bar".
 
 Using this transpiler, we namespace all global variable declarations using `window` object, i.e. our script becomes:
 
 ```js
 function loadVendorFoo () {
-  var foo = window.foo = foo || {};
+  var foo = window.foo = window.foo || 'bar';
 }
 ```
 
