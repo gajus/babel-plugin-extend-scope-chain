@@ -51,12 +51,12 @@ test('assignment in file scope', (t) => {
 
 test('options.export', (t) => {
   const actual = transform('foo.bar = "baz";', {
+    export: true,
     globals: [
       'foo'
-    ],
-    export: true
+    ]
   });
-  const expected = 'module.exports = function () { foo.bar = \"baz\"; }';
+  const expected = 'module.exports = function () { foo.bar = "baz"; }';
 
   t.true(actual === expected);
 });

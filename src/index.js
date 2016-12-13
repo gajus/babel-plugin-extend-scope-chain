@@ -24,6 +24,17 @@ export default ({
 }) => {
   return {
     visitor: {
+      AssignmentExpression (path: Object, state: Object) {
+        const realGlobals = state.opts.globals || [
+          'window'
+        ];
+
+        if (t.isIdentifier(path.get('left'))) {
+          extendScopeChain(t, path.get('left'), realGlobals);
+        } else if (t.isMemberExpression(path.get('left'))) {
+          extendScopeChain(t, path.get('left').get('object'), realGlobals);
+        }
+      },
       Program: {
         exit (path: Object, state: Object) {
           if (!state.opts.export) {
@@ -52,8 +63,6 @@ export default ({
         }
 
         for (const declaration of path.node.declarations) {
-          const currentExpression = declaration.init;
-
           declaration.init = t.assignmentExpression(
             '=',
             t.memberExpression(
@@ -62,17 +71,6 @@ export default ({
             ),
             declaration.init
           );
-        }
-      },
-      AssignmentExpression (path: Object, state: Object) {
-        const realGlobals = state.opts.globals || [
-          'window'
-        ];
-
-        if (t.isIdentifier(path.get('left'))) {
-          extendScopeChain(t, path.get('left'), realGlobals);
-        } else if (t.isMemberExpression(path.get('left'))) {
-          extendScopeChain(t, path.get('left').get('object'), realGlobals);
         }
       }
     }
