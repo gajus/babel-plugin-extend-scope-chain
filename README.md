@@ -42,7 +42,7 @@ Output:
 window.foo.bar = "bar";
 ```
 
-### assignment in [file](https://github.com/babel/babel/tree/master/packages/babel-types#file) scope
+### assignment in [program](https://github.com/babel/babel/tree/master/packages/babel-types#program) scope
 
 Input:
 
@@ -53,7 +53,7 @@ var foo = "bar";
 Output:
 
 ```js
-var foo = window.foo = "bar";
+window.foo = "bar";
 ```
 
 ## Motivation

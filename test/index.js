@@ -1,3 +1,5 @@
+// @flow
+
 import test from 'ava';
 import {
   transform as nativeTransform
@@ -17,21 +19,56 @@ const transform = (code, options = {}, filename = 'unset.js') => {
   }).code.replace(/\n/g, ' ').replace(/\s+/g, ' ');
 };
 
-test('global "foo" assignment expression', (t) => {
+test('function declaration (program body): assigns id to a global', (t): void => {
+  const actual = transform('function foo() {}');
+  const expected = 'function foo() {} window.foo = foo';
+
+  t.true(actual === expected);
+});
+
+test('variable declartion (program body) (without a value): removes the declaration', (t): void => {
+  const actual = transform('var foo;');
+  const expected = '';
+
+  t.true(actual === expected);
+});
+
+test('variable declartion (program body) (without a value): replaces all reference paths (identifier)', (t): void => {
+  const actual = transform('var foo; foo();');
+  const expected = 'window.foo();';
+
+  t.true(actual === expected);
+});
+
+test('variable declartion (program body) (without a value): replaces all reference paths (member expression)', (t): void => {
+  const actual = transform('var foo; foo.bar();');
+  const expected = 'window.foo.bar();';
+
+  t.true(actual === expected);
+});
+
+test('variable declartion (program body) (with a value): replaces the declaration', (t): void => {
+  const actual = transform('var foo = "bar";');
+  const expected = 'window.foo = "bar"';
+
+  t.true(actual === expected);
+});
+
+test('global "foo" assignment expression', (t): void => {
   const actual = transform('foo = "bar";');
   const expected = 'window.foo = "bar";';
 
   t.true(actual === expected);
 });
 
-test('global "foo.bar" assignment expression', (t) => {
+test('global "foo.bar" assignment expression', (t): void => {
   const actual = transform('foo.bar = "baz";');
   const expected = 'window.foo.bar = "baz";';
 
   t.true(actual === expected);
 });
 
-test('options.globals whitelist', (t) => {
+test('options.globals whitelist', (t): void => {
   const actual = transform('foo.bar = "baz";', {
     globals: [
       'foo'
@@ -42,21 +79,7 @@ test('options.globals whitelist', (t) => {
   t.true(actual === expected);
 });
 
-test('assignment in file scope', (t) => {
-  const actual = transform('var foo = "bar";');
-  const expected = 'var foo = window.foo = "bar";';
-
-  t.true(actual === expected);
-});
-
-test('assignment of global variable', (t) => {
-  const actual = transform('var foo = bar;');
-  const expected = 'var foo = window.foo = window.bar;';
-
-  t.true(actual === expected);
-});
-
-test('options.export', (t) => {
+test('options.export', (t): void => {
   const actual = transform('foo.bar = "baz";', {
     export: true,
     globals: [

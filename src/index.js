@@ -1,13 +1,14 @@
 // @flow
 
 const extendScopeChain = (t, identifier, realGlobals) => {
-  const isGlobal = identifier.scope.globals[identifier.node.name] === identifier.node;
-
   if (realGlobals.includes(identifier.node.name)) {
     return;
   }
 
-  if (isGlobal) {
+  const hasBinding = identifier.scope.hasBinding(identifier.node.name);
+  const isGlobal = identifier.scope.hasGlobal(identifier.node.name);
+
+  if (!hasBinding && isGlobal) {
     identifier.replaceWith(
       t.memberExpression(
         t.identifier('window'),
@@ -26,14 +27,31 @@ export default ({
 
   return {
     visitor: {
-      Identifier (path: Object) {
-        if (t.isAssignmentExpression(path.parent) && (path.parent.left === path.node || path.parent.right === path.node)) {
-          extendScopeChain(t, path, realGlobals);
+      FunctionDeclaration (path: Object) {
+        if (!t.isProgram(path.parent)) {
+          return;
         }
 
-        if (t.isMemberExpression(path.parent) && path.parent.object === path.node) {
+        path.insertAfter(
+          t.assignmentExpression(
+            '=',
+            t.memberExpression(
+              t.identifier('window'),
+              path.node.id
+            ),
+            path.node.id
+          )
+        );
+      },
+      Identifier (path: Object) {
+        if (t.isAssignmentExpression(path.parent) && path.parent.left === path.node) {
           extendScopeChain(t, path, realGlobals);
         }
+      },
+      MemberExpression (path: Object) {
+        const identifierNode = path.get('object');
+
+        extendScopeChain(t, identifierNode, realGlobals);
       },
       Program: {
         enter (path: Object, state: Object) {
@@ -67,15 +85,32 @@ export default ({
           return;
         }
 
-        for (const declaration of path.node.declarations) {
-          declaration.init = t.assignmentExpression(
-            '=',
-            t.memberExpression(
-              t.identifier('window'),
-              declaration.id
-            ),
-            declaration.init
-          );
+        const declarations = path.get('declarations');
+
+        for (const declaration of declarations) {
+          for (const referencePath of declaration.scope.getBinding(declaration.node.id.name).referencePaths) {
+            referencePath.replaceWith(
+              t.memberExpression(
+                t.identifier('window'),
+                declaration.node.id
+              )
+            );
+          }
+
+          if (declaration.node.init) {
+            path.insertAfter(
+              t.assignmentExpression(
+                '=',
+                t.memberExpression(
+                  t.identifier('window'),
+                  declaration.node.id
+                ),
+                declaration.node.init
+              )
+            );
+          }
+
+          declaration.remove();
         }
       }
     }
