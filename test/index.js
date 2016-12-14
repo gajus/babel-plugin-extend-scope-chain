@@ -54,6 +54,13 @@ test('variable declartion (program body) (with a value): replaces the declaratio
   t.true(actual === expected);
 });
 
+test('variable declartion (program body) (assignment expression): replaces the declaration', (t): void => {
+  const actual = transform('var foo = bar = "baz";');
+  const expected = 'window.foo = window.bar = "baz"';
+
+  t.true(actual === expected);
+});
+
 test('global "foo" assignment expression', (t): void => {
   const actual = transform('foo = "bar";');
   const expected = 'window.foo = "bar";';
@@ -87,6 +94,15 @@ test('options.export', (t): void => {
     ]
   });
   const expected = 'module.exports = function () { foo.bar = "baz"; }';
+
+  t.true(actual === expected);
+});
+
+test('options.export wraps non-expression statements', (t): void => {
+  const actual = transform('var a = a || null', {
+    export: true
+  });
+  const expected = 'module.exports = function () { window.a = window.a || null; }';
 
   t.true(actual === expected);
 });

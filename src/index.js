@@ -74,7 +74,11 @@ export default ({
               t.functionExpression(
                 null,
                 [],
-                t.blockStatement(path.node.body)
+                t.blockStatement(
+                  path.node.body.map((maybeExpression) => {
+                    return t.isExpressionStatement(maybeExpression) ? maybeExpression : t.expressionStatement(maybeExpression);
+                  })
+                )
               )
             )
           ];
