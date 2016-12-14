@@ -75,8 +75,16 @@ export default ({
                 null,
                 [],
                 t.blockStatement(
-                  path.node.body.map((maybeExpression) => {
-                    return t.isExpressionStatement(maybeExpression) ? maybeExpression : t.expressionStatement(maybeExpression);
+                  path.node.body.map((maybeStatement) => {
+                    if (t.isStatement(maybeStatement)) {
+                      return maybeStatement;
+                    }
+
+                    if (t.isExpression(maybeStatement)) {
+                      return t.expressionStatement(maybeStatement);
+                    }
+
+                    throw new Error('Unexpected input.');
                   })
                 )
               )
